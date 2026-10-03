@@ -1,0 +1,23 @@
+{
+  "name": "messaging-app",
+  "version": "1.0.0",
+  "description": "messaging app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/STORM533/messaging-app.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/STORM533/messaging-app/issues"
+  },
+  "homepage": "https://github.com/STORM533/messaging-app#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2"
+  }
+}
