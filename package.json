@@ -2,16 +2,22 @@
   "name": "messaging-app",
   "version": "1.0.0",
   "description": "messaging app",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:api": "npm run dev --workspace @messaging-app/api",
+    "dev:web": "npm run dev --workspace @messaging-app/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint apps packages eslint.config.js",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/STORM533/messaging-app.git"
   },
   "keywords": [],
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/STORM533/messaging-app/issues"
   },
@@ -19,22 +25,19 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.6.3",
+    "@types/node": "^24.0.0",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
-    "supertest": "^7.3.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.0",
-    "vitest": "^5.0.3"
+    "typescript-eslint": "^8.71.0"
   },
-  "dependencies": {
-    "@socket.io/redis-adapter": "^8.3.0",
-    "express": "^5.2.1",
-    "mongoose": "^9.10.3",
-    "openid-client": "^6.8.8",
-    "redis": "^6.3.0",
-    "socket.io": "^4.8.4",
-    "zod": "^4.6.5"
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/shared-types"
+  ],
+  "engines": {
+    "node": ">=24 <25"
   }
 }
