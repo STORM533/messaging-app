@@ -1,6 +1,8 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { app } from "../../src/app.js";
+import { createApp } from "../../src/app.js";
+
+const app = createApp({ isReady: async () => false, writeRequestLog() {} });
 
 describe("GET /health", () => {
   it("returns the public health response as JSON", async () => {
