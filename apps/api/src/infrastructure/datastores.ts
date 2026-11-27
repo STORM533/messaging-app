@@ -10,7 +10,12 @@ export function startDatastores(mongoUri: string, redisUrl: string) {
     disableOfflineQueue: true,
     commandsQueueMaxLength: 4,
     pingInterval: 5000,
-    socket: { connectTimeout: 1000, socketTimeout: 15000 },
+    socket: {
+      connectTimeout: 1000,
+      socketTimeout: 15000,
+      // The default strategy stops reconnecting after a socket timeout.
+      reconnectStrategy: (retries) => Math.min(100 * 2 ** retries, 2000),
+    },
   });
 
   // Drivers can emit connection errors whose messages contain connection details.
