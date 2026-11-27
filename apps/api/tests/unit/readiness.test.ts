@@ -1,3 +1,4 @@
+import { gzipSync } from "node:zlib";
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../../src/app.js";
@@ -47,6 +48,12 @@ describe("foundation health and request logs", () => {
       .set("Content-Type", "application/json")
       .send('{"message": fixture-body}')
       .expect(400, { status: "invalid_request" });
+    await request(app)
+      .post("/fixture-path")
+      .set("Content-Type", "application/json")
+      .set("Content-Encoding", "gzip")
+      .send(gzipSync(JSON.stringify({ message: "fixture-body" })))
+      .expect(415, { status: "invalid_request" });
     expect(JSON.stringify(writeRequestLog.mock.calls)).not.toContain("fixture");
   });
 
