@@ -1,7 +1,8 @@
 import { createServer } from "node:http";
 import { app } from "./app.js";
+import { loadEnv } from "./config/env.js";
 
-const port = Number(process.env.PORT ?? 3000);
+const { PORT: port } = loadEnv(process.env);
 const server = createServer(app);
 
 server.listen(port, () => {
