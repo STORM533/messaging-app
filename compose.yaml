@@ -1,0 +1,105 @@
+x-restricted-service: &restricted-service
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+services:
+  app:
+    <<: *restricted-service
+    build:
+      context: .
+      target: api
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      MONGODB_URI: mongodb://mongo:27017/messaging_app
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - edge
+      - data
+    cpus: 1.0
+    mem_limit: 256m
+    pids_limit: 128
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/healthz').then(response => process.exit(response.ok ? 0 : 1), () => process.exit(1))"
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+
+  mongo:
+    <<: *restricted-service
+    image: mongo:8.0.38-noble@sha256:52afee5c058069f3b4c1517eaf65a8326d9f58ce4ef4fd076043b8eab6905112
+    user: "999:999"
+    command: [mongod, --bind_ip_all, --nounixsocket, --wiredTigerCacheSizeGB, "0.25"]
+    volumes:
+      - mongo-data:/data/db
+    tmpfs:
+      - /data/configdb:rw,noexec,nosuid,nodev,size=16m,uid=999,gid=999,mode=0700
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,uid=999,gid=999,mode=0700
+    networks:
+      - data
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 256
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --norc
+        - --quiet
+        - --eval
+        - "quit(db.adminCommand({ ping: 1 }).ok === 1 ? 0 : 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  redis:
+    <<: *restricted-service
+    image: redis:8.8.4-alpine@sha256:1273af45b299d2b8b60d0e400d90aa6c2c5b1794f01d6a7ca60ff3ba6e65efb5
+    user: "999:1000"
+    # This credential-free Redis is reachable only on the internal data network.
+    command: [redis-server, --protected-mode, "no", --save, "", --appendonly, "no"]
+    networks:
+      - data
+    cpus: 0.5
+    mem_limit: 256m
+    pids_limit: 64
+    healthcheck:
+      test: [CMD, redis-cli, -e, ping]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  nginx:
+    <<: *restricted-service
+    build:
+      context: .
+      target: nginx
+    depends_on:
+      - app
+    ports:
+      - "127.0.0.1:${MESSAGING_PORT:-8080}:8080"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m,uid=101,gid=101,mode=0700
+    networks:
+      - edge
+    cpus: 0.5
+    mem_limit: 128m
+    pids_limit: 64
+
+networks:
+  edge:
+  data:
+    internal: true
+
+volumes:
+  mongo-data:

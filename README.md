@@ -1,84 +1,52 @@
 # Messaging App
 
-Messaging App is a real-time communication platform for personal and group conversations. People connect with contacts, exchange messages, see presence, and stay up to date with notifications. AI-assisted tools help compose replies and manage conversations.
+This project is building persistent direct and group messaging and temporary
+guest rooms. The current foundation provides a React scaffold, an Express API,
+validated runtime configuration, service health checks and local Compose
+setup. Sign-in, chat and guest-room features come in later milestones.
 
-## Features
+## Run locally with Compose
 
-- Sign in with an OpenID Connect identity provider.
-- Find and manage contacts, then start one-to-one or group conversations.
-- Exchange messages in real time and see contact presence.
-- Receive notifications and use AI-assisted reply tools.
-- Keep sessions and API traffic protected with app-owned token and rate-limit rules.
-
-## Technology
-
-| Area | Technology |
-| --- | --- |
-| Runtime and language | Node.js 24 LTS, TypeScript, ESM |
-| API | Express 5 and Socket.IO |
-| Sign-in | OpenID Connect with `openid-client` |
-| Sessions and limits | Node.js `crypto` and Redis |
-| Application data | MongoDB with Mongoose |
-| Background jobs | BullMQ with Redis |
-| Web client | React, React Router, Vite, and `socket.io-client` |
-| Shared contracts | Local `@messaging-app/shared-types` workspace |
-
-The root package manages the API, web client, and shared-types package as npm workspaces. Dependencies are declared in the workspace that uses them, and the root `package-lock.json` records the full install.
-
-## Repository layout
-
-```text
-messaging-app/
-├── apps/
-│   ├── api/
-│   │   ├── src/
-│   │   │   ├── config/
-│   │   │   ├── infrastructure/   # MongoDB, Redis, and Socket.IO
-│   │   │   ├── middleware/
-│   │   │   ├── modules/          # auth, contacts, conversations, messages, etc.
-│   │   │   └── shared/
-│   │   └── tests/                # unit, integration, and helper tests
-│   └── web/
-│       └── src/test/             # setup, unit, integration, and helper tests
-├── packages/
-│   └── shared-types/             # contracts shared by the API and web client
-├── package.json                  # workspaces and root commands
-└── package-lock.json             # lockfile for all workspaces
-```
-
-## Setup
-
-Use Node.js 24 LTS and the npm version bundled with it. Install dependencies from the repository root:
+With Docker and Compose installed, run from the repository root:
 
 ```sh
-npm install
+docker compose up --build -d
+curl -fsS http://127.0.0.1:8080/health
 ```
 
-Start the API and web client in separate terminals:
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080) for the web scaffold.
+Only Nginx publishes a host port. Set `MESSAGING_PORT` before startup to use
+a different loopback port. MongoDB and Redis stay on the private data network.
+Use this command to check API readiness inside the stack:
 
 ```sh
-npm run dev:api
-npm run dev:web
+docker compose exec -T app node -e 'fetch("http://127.0.0.1:3000/readyz").then(async r => { console.log(r.status, await r.text()); process.exitCode = r.ok ? 0 : 1 })'
 ```
 
-The API listens on port `3000` by default. Its health endpoint is `http://localhost:3000/health`. Vite serves the web client on its default development port.
+The API is live while its HTTP server responds. Readiness requires both
+MongoDB and Redis to respond. Use `docker compose down` to stop the stack
+and keep its MongoDB volume.
 
-## Commands
+## Develop and verify
 
-| Command | Description |
-| --- | --- |
-| `npm run dev:api` | Run the API with `tsx` watch mode. |
-| `npm run dev:web` | Start the Vite development server. |
-| `npm run typecheck` | Typecheck all workspaces, including API tests. |
-| `npm run build` | Build each workspace with a build script. |
-| `npm run lint` | Lint app and package source. |
+Use Node.js `24.22.1` (see `.nvmrc`) and npm `12.2.1`. The repository
+uses npm workspaces for `apps/api`, `apps/web` and `packages/shared-types`.
 
-Pass `--workspace <name>` to run a workspace command on one package, for example `npm run typecheck --workspace @messaging-app/api`.
+```sh
+npm ci --ignore-scripts
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-## Tests
+Run `npm run dev:web` to start Vite. For custom Vite arguments, run
+`npm run dev --workspace @messaging-app/web -- --port 5174 --strictPort`.
+For an API development process outside Compose, start local datastores
+and supply the [API environment](docs/configuration.md) before running
+`npm run dev:api`.
 
-- `npm test` runs the test scripts across all workspaces. Use it for a combined API and web check.
-- `npm run test:watch` keeps Vitest running and reruns tests when files change. Use it while developing tests.
-- `npm run test:coverage` runs the suites and reports V8 code coverage. The report shows which code paths tests exercise.
-- `npm run test --workspace @messaging-app/api` runs API tests in Node. Use it for backend routes, services, and Socket.IO behavior.
-- `npm run test --workspace @messaging-app/web` runs web tests in jsdom. Use it for React components and browser interactions.
+Run `npm run test:watch --workspace @messaging-app/api` and
+`npm run test:watch --workspace @messaging-app/web` in separate terminals
+to watch both suites. `npm run test:coverage` generates coverage reports.
